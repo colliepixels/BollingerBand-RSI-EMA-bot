@@ -1,0 +1,33 @@
+#include <MetaTrader5.mqh>
+#include <Math\Statistics\BollingerBands.mqh>
+
+Inputs:
+  int rsiPeriod = 14;
+
+void OnStart()
+{
+  // Subscribe to the 1H chart
+  ChartSubscribeSymbol(Symbol(), PERIOD_H1);
+}
+
+void OnTick()
+{
+  // Get the current RSI value
+  double rsi = iRSI(Symbol(), PERIOD_H1, rsiPeriod, PRICE_CLOSE, MODE_MAIN, 0);
+
+  // Get the 365 EMA value
+  double ema365 = iMA(Symbol(), PERIOD_D1, 365, 0, MODE_EMA, PRICE_CLOSE);
+
+  // Get the 180 EMA value
+  double ema180 = iMA(Symbol(), PERIOD_D1, 180, 0, MODE_EMA, PRICE_CLOSE);
+
+  // Calculate the Bollinger Bands
+  BollingerBands bb = GetBollingerBands(Symbol(), PERIOD_H1, 20, 2.0);
+
+  // Check if the current candle is below the lower Bollinger Band and the RSI is below 30%
+  if (Close[0] < bb.LowerBand && rsi < 30.0 && ema365 < ema180)
+  {
+    // Buy on close
+    OrderSend(Symbol(), OP_BUY, Lots, Ask, Slippage, 0.0, 0.0, "", MagicNumber, 0, Green);
+  }
+}
