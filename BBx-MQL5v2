@@ -1,0 +1,42 @@
+#include <BollingerBands.mqh>
+#include <RSI.mqh>
+#include <MovingAverages.mqh>
+
+input int RSI_Period = 14;
+input int BB_Period = 20;
+input int BB_Deviation = 2;
+input int EMA_365_Period = 365;
+input int EMA_180_Period = 180;
+input double Risk = 0.5;
+
+double upperBand[];
+double middleBand[];
+double lowerBand[];
+double rsi[];
+double ema365[];
+double ema180[];
+
+int OnInit()
+{
+    // Initialize the indicators
+    BBands(BB_Period, BB_Deviation, 0, MODE_SMA, upperBand, middleBand, lowerBand);
+    RSI(RSI_Period, MODE_MAIN, rsi);
+    iMA(NULL, 0, EMA_365_Period, 0, MODE_EMA, ema365);
+    iMA(NULL, 0, EMA_180_Period, 0, MODE_EMA, ema180);
+    
+    return(INIT_SUCCEEDED);
+}
+
+void OnTick()
+{
+    int bar = Bars - 1;
+
+    if (rsi[bar] < 30 && ema365[bar] < ema180[bar] && Close[bar] < lowerBand[bar])
+    {
+        double stopLoss = Close[bar] - Risk * (Close[bar] - lowerBand[bar]);
+        double takeProfit = Close[bar] + 2 * (Close[bar] - lowerBand[bar]);
+        double lotSize = .25;
+        
+        OrderSend(NULL, OP_BUY, lotSize, Ask, 3, stopLoss, takeProfit, NULL, 0, 0, Green);
+    }
+}
